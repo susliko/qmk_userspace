@@ -24,8 +24,40 @@ enum charybdis_keymap_layers {
     LAYER_MEDIA,
     LAYER_MOUSE,
     LAYER_NUM,
-    LAYER_SYM
 };
+
+bool get_hold_on_other_key_press(uint16_t keycode, keyrecord_t *record) {
+    switch (keycode) {
+        case LSFT_T(KC_A) | MT(MOD_LSFT | MOD_RSFT, KC_SCLN) | LGUI_T(KC_F):
+            // Immediately select the hold action when another key is pressed.
+            return true;
+        default:
+            // Do not select the hold action when another key is pressed.
+            return false;
+    }
+}
+
+enum custom_keycodes {
+    KC_NVIM_SAVE = SAFE_RANGE,
+};
+
+
+bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+    switch (keycode) {
+        case KC_NVIM_SAVE:
+            if (record->event.pressed) {
+                tap_code(KC_ESC);         // Send <Esc>
+                register_code(KC_LSFT);  // Hold Left Shift
+                tap_code(KC_SEMICOLON);  // Send ';' (shifted to ':')
+                unregister_code(KC_LSFT); // Release Left Shift
+                tap_code(KC_W);          // Send 'w'
+                tap_code(KC_ENTER);
+            }
+            return false; // Skip further processing of this key
+        default:
+            return true; // Process all other keycodes normally
+    }
+}
 
 // clang-format off
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
@@ -37,7 +69,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   // ├─────────────────────────────────────────────┤ ├─────────────────────────────────────────────┤
     LT(4,KC_Z),   KC_X,    KC_C,    KC_V,    KC_B,       KC_N,    KC_M, KC_COMM,  KC_DOT, LT(4,KC_SLSH),
   // ╰─────────────────────────────────────────────┤ ├─────────────────────────────────────────────╯
-                      LT(1,KC_ESC), LT(3,KC_BSPC), LT(2,KC_TAB),    LT(6,KC_ENT), LT(5,KC_SPC)
+        LT(1,KC_ESC), LT(3,KC_BSPC), LT(2, KC_TAB),    LT(2,KC_ENT), LT(5,KC_SPC)
   //                   ╰───────────────────────────╯ ╰──────────────────╯
   ),
 
@@ -57,11 +89,11 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   // ╭─────────────────────────────────────────────╮ ╭─────────────────────────────────────────────╮
        XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,    KC_HOME, KC_PGUP, XXXXXXX, XXXXXXX, XXXXXXX,
   // ├─────────────────────────────────────────────┤ ├─────────────────────────────────────────────┤
-       KC_CAPS, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,    KC_LEFT, KC_DOWN,   KC_UP, KC_RGHT, XXXXXXX,
+       KC_CAPS, KC_NVIM_SAVE, XXXXXXX, XXXXXXX, XXXXXXX,    KC_LEFT, KC_DOWN,   KC_UP, KC_RGHT, XXXXXXX,
   // ├─────────────────────────────────────────────┤ ├─────────────────────────────────────────────┤
        XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,     KC_END, KC_PGDN, XXXXXXX, XXXXXXX, XXXXXXX,
   // ╰─────────────────────────────────────────────┤ ├─────────────────────────────────────────────╯
-                         XXXXXXX, XXXXXXX, _______,     KC_ENT,  KC_SPC
+                         KC_GRV, S(KC_GRV), _______,     KC_ENT,  KC_SPC
   //                   ╰───────────────────────────╯ ╰──────────────────╯
   ),
 
@@ -93,25 +125,14 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   // ╭─────────────────────────────────────────────╮ ╭─────────────────────────────────────────────╮
           KC_1,    KC_2,    KC_3,    KC_4,    KC_5,       KC_6,    KC_7,    KC_8,    KC_9,    KC_0,
   // ├─────────────────────────────────────────────┤ ├─────────────────────────────────────────────┤
-       KC_LSFT, XXXXXXX, S(KC_9), S(KC_LBRC), KC_LBRC,    KC_RBRC, S(KC_RBRC), S(KC_0), KC_BSLS, S(KC_QUOT),
+       KC_QUOT, KC_EQL, S(KC_9), S(KC_LBRC), KC_LBRC,    KC_RBRC, S(KC_RBRC), S(KC_0), KC_BSLS, S(KC_QUOT),
   // ├─────────────────────────────────────────────┤ ├─────────────────────────────────────────────┤
-       XXXXXXX, XXXXXXX, XXXXXXX,  KC_EQL, XXXXXXX,    XXXXXXX,  KC_EQL, KC_COMM,  KC_DOT, KC_SLSH,
+       S(KC_1), S(KC_2), S(KC_3), S(KC_4), S(KC_5),    S(KC_6), S(KC_7), S(KC_8), S(KC_9), S(KC_0),
   // ╰─────────────────────────────────────────────┤ ├─────────────────────────────────────────────╯
                       KC_PMNS , KC_PPLS, S(KC_MINS),    XXXXXXX, _______
   //                   ╰───────────────────────────╯ ╰──────────────────╯
   ),
 
-  [LAYER_SYM] = LAYOUT(
-  // ╭─────────────────────────────────────────────╮ ╭─────────────────────────────────────────────╮
-       S(KC_1), S(KC_2), S(KC_3), S(KC_4), S(KC_5),    S(KC_6), S(KC_7), S(KC_8), S(KC_9), S(KC_0),
-  // ├─────────────────────────────────────────────┤ ├─────────────────────────────────────────────┤
-       KC_LSFT,  KC_GRV, S(KC_9), S(KC_LBRC), KC_LBRC,    KC_RBRC, S(KC_RBRC), S(KC_0), KC_BSLS, KC_QUOT,
-  // ├─────────────────────────────────────────────┤ ├─────────────────────────────────────────────┤
-       XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,    XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, KC_SLSH,
-  // ╰─────────────────────────────────────────────┤ ├─────────────────────────────────────────────╯
-                      DM_PLY1, S(KC_GRV), S(KC_8),    _______, XXXXXXX
-  //                   ╰───────────────────────────╯ ╰──────────────────╯
-  ),
 };
 // clang-format on
 
